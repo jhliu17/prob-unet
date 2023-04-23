@@ -1,5 +1,5 @@
 # (Project Title)
-### Applying neural networks for medical OCT image classification
+### Applying deep neural networks for medical OCT image understanding
 
 This is what we are going to do. Placeholder text...
 
