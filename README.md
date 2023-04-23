@@ -10,8 +10,8 @@ This is what we are going to do. Placeholder text...
 
 ## Model References
 1. [Pytorch Image Classification Tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html#goal-of-this-tutorial)
-2. [Predicting optical coherence tomography-derived diabetic macular edema grades from fundus photographs using deep learning](https://www.nature.com/articles/s41467-019-13922-8#code-availability)
-  - [more up-to-date Pytorch Inception-V3 Arch](https://github.com/huggingface/pytorch-image-models#models)
+2. [Pytorch Inception-V3 Arch](https://github.com/huggingface/pytorch-image-models#models)
+    * [Original Paper](https://www.nature.com/articles/s41467-019-13922-8#code-availability)
 
 ## Log ToDo
 1. (2023/04/30) Do the Basic Pytorch Image Classification Tutorial
