@@ -9,4 +9,5 @@ This is what we are going to do. Placeholder text...
 3. [Duke Vision and Image Processing (VIP) Laboratory](https://people.duke.edu/~sf59/Chiu_BOE_2014_dataset.htm)
 
 ## Model References
-1. [Predicting optical coherence tomography-derived diabetic macular edema grades from fundus photographs using deep learning](https://www.nature.com/articles/s41467-019-13922-8#code-availability)
+1. [Pytorch Image Classification Tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html#goal-of-this-tutorial)
+2. [Predicting optical coherence tomography-derived diabetic macular edema grades from fundus photographs using deep learning](https://www.nature.com/articles/s41467-019-13922-8#code-availability)
