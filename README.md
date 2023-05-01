@@ -15,3 +15,4 @@ This is what we are going to do. Placeholder text...
 
 ## Log ToDo
 1. (2023/04/30) Do the Basic Pytorch Image Classification Tutorial
+2. (2023/05/07) Run the Pytorch Tutorial Multi-Class Arch on OCT images.
