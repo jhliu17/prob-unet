@@ -1,22 +1,14 @@
-# (Project Title)
+# OCT Image Understanding
 
-### Applying deep neural networks for medical OCT image understanding
+## Dataset
 
-This is what we are going to do. Placeholder text...
+Processed from `boe_chiu` dataset includea train: 86 test: 28.
 
-## Data References
 
-1. [Kaggle Dataset w/ Cell Paper citation](https://www.kaggle.com/datasets/paultimothymooney/kermany2018)
-2. [Noor Eye Hospital in Tehran Dataset](https://sites.google.com/site/hosseinrabbanikhorasgani/datasets-1)
-3. [Duke Vision and Image Processing (VIP) Laboratory](https://people.duke.edu/~sf59/Chiu_BOE_2014_dataset.htm)
+## Training
 
-## Model References
+Use index to indicate which gpu card you are going to use
 
-1. [Pytorch Image Classification Tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html#goal-of-this-tutorial)
-2. [Pytorch Inception-V3 Arch](https://github.com/huggingface/pytorch-image-models#models)
-    * [Original Paper](https://www.nature.com/articles/s41467-019-13922-8#code-availability)
-
-## Log ToDo
-
-1. (2023/04/30) Do the Basic Pytorch Image Classification Tutorial
-2. (2023/05/07) Run the Pytorch Tutorial Multi-Class Arch on OCT images.
+```bash
+sh script/train_unet.sh [gpu_id]
+```
