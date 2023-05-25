@@ -83,20 +83,13 @@ class BoeChiuFluidSegDataset(Dataset):
     def __init__(self, npz_path: str):
         super().__init__()
         self.npz = np.load(npz_path)
-        self.x = np.tile(self.npz['x'], (3, 1, 1))
-        self.y = np.concatenate(
-            [self.npz['y_manual_1'], self.npz['y_manual_2'], self.npz['y_auto']],
-            axis=0
-        )
-        self.y_mask = np.concatenate(
-            [self.npz['y_manual_1_mask'], self.npz['y_manual_2_mask'], self.npz['y_auto_mask']],
-            axis=0
-        )
+        self.x = self.npz['x']
+        self.y = self.npz['y']
 
     def __len__(self):
-        return np.sum(self.y_mask)
+        return len(self.x)
 
     def __getitem__(self, index):
-        tensor_x = torch.from_numpy(self.x[self.y_mask][index])
-        tensor_y = torch.from_numpy(self.y[self.y_mask][index])
+        tensor_x = torch.from_numpy(self.x[index]).float()
+        tensor_y = torch.from_numpy(self.y[index]).long()
         return tensor_x, tensor_y

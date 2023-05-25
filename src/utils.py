@@ -2,6 +2,8 @@ import itertools
 import numpy as np
 import torch
 
+from matplotlib import pyplot as plt
+
 
 def check_attributes(object_, attributes):
 
@@ -98,3 +100,20 @@ def make_slices(original_shape, patch_shape):
         slices[i] = [slice(None), ] * (len(original_shape) - len(patch_shape)) + list(slices[i])
 
     return slices
+
+
+def plot_segmentation_examples(datax, datay_pred, datay, num_examples=3):
+    fig, ax = plt.subplots(nrows=3, ncols=4, figsize=(18, 4*num_examples))
+    m = datax.shape[0]
+    for row_num in range(num_examples):
+        image_indx = np.random.randint(m)
+        ax[row_num][0].imshow(np.transpose(datax[image_indx], (1, 2, 0))[:, :, 0])
+        ax[row_num][0].set_title("Orignal Image")
+        ax[row_num][1].imshow(np.transpose(datay_pred[image_indx], (1, 2, 0))[:, :, 0])
+        ax[row_num][1].set_title("Segmented Image")
+        ax[row_num][2].imshow(datay_pred[image_indx].argmax(0))
+        ax[row_num][2].set_title("Segmented Image localization")
+        ax[row_num][3].imshow(np.transpose(datay[image_indx], (1, 2, 0))[:, :, 0])
+        ax[row_num][3].set_title("Target image")
+
+    return fig, ax
