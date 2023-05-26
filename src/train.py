@@ -4,7 +4,7 @@ from torch.utils.data import random_split
 
 from src.model.segmentation.unet import UNet
 from src.dataset import BoeChiuFluidSegDataset
-from src.trainer import Trainer
+from src.trainer import TrainerForUNet
 
 
 def train_unet(args):
@@ -18,7 +18,7 @@ def train_unet(args):
 
     # init model and trainer
     model = UNet(1, 2)
-    trainer = Trainer(args, model)
+    trainer = TrainerForUNet(args, model)
     trainer.logger.info('Dataset details:')
     trainer.logger.info(f'train: {len(train_dataset)} valid: {len(valid_dataset)} test: {len(test_dataset)}')
 

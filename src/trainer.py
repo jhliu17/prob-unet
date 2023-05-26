@@ -22,29 +22,53 @@ class Trainer:
         self._set_writer()
 
         # init ingredients
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # init model
         self.model = model
         self.model = self.model.to(self.device)
 
         # init optimizer and learning rate scheduler
-        self.optimizer = SGD(
-            self.model.parameters(),
-            lr=self.args.lr,
-            momentum=0.99
-        )
+        self.optimizer = SGD(self.model.parameters(), lr=self.args.lr, momentum=0.99)
 
         # log status
-        self.logger.info('Experiment setting:')
+        self.logger.info("Experiment setting:")
         for k, v in sorted(vars(self.args).items()):
-            self.logger.info(f'{k}: {v}')
+            self.logger.info(f"{k}: {v}")
 
     def resume(self, resume_ckpt_path: str):
         # resume checkpoint
-        self.logger.info(f'Resume model checkpoint from {resume_ckpt_path}...')
+        self.logger.info(f"Resume model checkpoint from {resume_ckpt_path}...")
         self.model.load_state_dict(torch.load(resume_ckpt_path))
 
+    def train(self, train_dataset, eval_dataset):
+        self.train_loop(train_dataset, eval_dataset, self.train_step)
+
+    def _set_writer(self):
+        self.logger.info("Create writer at '{}'".format(self.args.ckpt_dir))
+        self.writer = SummaryWriter(self.args.ckpt_dir)
+
+    def _init_logger(self):
+        logging.basicConfig(
+            filename=os.path.join(self.args.ckpt_dir, f"{self.args.mode}.log"),
+            level=logging.INFO,
+            datefmt="%Y/%m/%d %H:%M:%S",
+            format="%(asctime)s: %(name)s [%(levelname)s] %(message)s",
+        )
+        formatter = logging.Formatter(
+            "%(asctime)s: %(name)s [%(levelname)s] %(message)s",
+            datefmt="%Y/%m/%d %H:%M:%S",
+        )
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.DEBUG)
+        stream_handler.setFormatter(formatter)
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(stream_handler)
+
+
+class TrainerForUNet(Trainer):
     def train_loop(self, train_dataset, eval_dataset, step_func):
         """Training loop function for model training and finetuning.
 
@@ -56,7 +80,7 @@ class Trainer:
             train_dataset,
             batch_size=self.args.batch_size,
             shuffle=False,
-            num_workers=self.args.number_worker
+            num_workers=self.args.number_worker,
         )
 
         global_step = 0
@@ -67,23 +91,19 @@ class Trainer:
                 label: torch.Tensor = label.to(self.device)
 
                 # run step
-                input_feats = {'feat': feat, 'label': label}
+                input_feats = {"feat": feat, "label": label}
                 loss_log = step_func(input_feats)
 
                 # print loss
                 if step % self.args.log_freq == 0:
-                    loss_str = ' '.join([f'{k}: {v}' for k, v in loss_log.items()])
+                    loss_str = " ".join([f"{k}: {v}" for k, v in loss_log.items()])
                     self.logger.info(f"Epoch: {epoch} Step: {step} | Loss: {loss_str}")
                     for k, v in loss_log.items():
-                        self.writer.add_scalar(f'train/{k}', v, global_step)
+                        self.writer.add_scalar(f"train/{k}", v, global_step)
 
                     # log current learning rate
-                    current_lr = self.optimizer.param_groups[0]['lr']
-                    self.writer.add_scalar(
-                        'train/lr',
-                        current_lr,
-                        global_step
-                    )
+                    current_lr = self.optimizer.param_groups[0]["lr"]
+                    self.writer.add_scalar("train/lr", current_lr, global_step)
 
                 # increase step
                 global_step += 1
@@ -93,30 +113,26 @@ class Trainer:
                 eval_output, seg_output = self.eval(eval_dataset)
                 for k, v in eval_output.items():
                     self.logger.info(f"{k}: {v}")
-                    self.writer.add_scalar(f'train/eval_{k}', v, epoch)
+                    self.writer.add_scalar(f"train/eval_{k}", v, epoch)
 
                 # plot training segmentation results
                 fig, _ = plot_segmentation_examples(
-                    seg_output['x'].numpy(),
-                    seg_output['y_pred'].numpy(),
-                    seg_output['y_true'].numpy(),
+                    seg_output["x"].numpy(),
+                    seg_output["y_pred"].numpy(),
+                    seg_output["y_true"].numpy(),
                 )
-                self.writer.add_figure('train/eval_seg', figure=fig)
+                self.writer.add_figure("train/eval_seg", figure=fig)
 
                 torch.save(
-                    self.model.state_dict(),
-                    f'{self.args.ckpt_dir}/model_{epoch}.pth'
+                    self.model.state_dict(), f"{self.args.ckpt_dir}/model_{epoch}.pth"
                 )
 
         # save the final model after training
-        torch.save(
-            self.model.state_dict(),
-            f'{self.args.ckpt_dir}/model_final.pth'
-        )
+        torch.save(self.model.state_dict(), f"{self.args.ckpt_dir}/model_final.pth")
 
     def train_step(self, input_feats):
         self.model.train()
-        feat, label = input_feats['feat'], input_feats['label']
+        feat, label = input_feats["feat"], input_feats["label"]
 
         # clean gradient and forward
         self.optimizer.zero_grad()
@@ -136,11 +152,8 @@ class Trainer:
         self.optimizer.step()
 
         # prepare log dict
-        log = {'loss': loss.item()}
+        log = {"loss": loss.item()}
         return log
-
-    def train(self, train_dataset, eval_dataset):
-        self.train_loop(train_dataset, eval_dataset, self.train_step)
 
     @torch.inference_mode()
     def eval(self, dataset, num_workers: int = 0):
@@ -149,7 +162,7 @@ class Trainer:
             dataset,
             batch_size=self.args.eval_batch_size,
             shuffle=False,
-            num_workers=num_workers
+            num_workers=num_workers,
         )
 
         feat_list = []
@@ -169,9 +182,9 @@ class Trainer:
         score = self.eval_on_prediction(y_pred, y_true)
 
         output = {}
-        output['x'] = x
-        output['y_pred'] = y_pred
-        output['y_true'] = y_true
+        output["x"] = x
+        output["y_pred"] = y_pred
+        output["y_true"] = y_true
         return score, output
 
     @torch.inference_mode()
@@ -184,30 +197,7 @@ class Trainer:
         num2 = y_true.sum().item()
 
         score = {}
-        score['iou_score'] = iou_score
-        score['pred_area'] = num1
-        score['label_area'] = num2
+        score["iou_score"] = iou_score
+        score["pred_area"] = num1
+        score["label_area"] = num2
         return score
-
-    def _set_writer(self):
-        self.logger.info('Create writer at \'{}\''.format(self.args.ckpt_dir))
-        self.writer = SummaryWriter(self.args.ckpt_dir)
-
-    def _init_logger(self):
-        logging.basicConfig(
-            filename=os.path.join(self.args.ckpt_dir, f'{self.args.mode}.log'),
-            level=logging.INFO,
-            datefmt='%Y/%m/%d %H:%M:%S',
-            format='%(asctime)s: %(name)s [%(levelname)s] %(message)s'
-        )
-        formatter = logging.Formatter(
-            '%(asctime)s: %(name)s [%(levelname)s] %(message)s',
-            datefmt='%Y/%m/%d %H:%M:%S'
-        )
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(formatter)
-
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(stream_handler)

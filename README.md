@@ -12,3 +12,5 @@ Use index to indicate which gpu card you are going to use
 ```bash
 sh script/train_unet.sh [gpu_id]
 ```
+
+## References
