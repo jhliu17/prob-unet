@@ -47,16 +47,39 @@ class ProbabilisticModule(nn.Module):
 
 
 class OutputModule(nn.Module):
-    def __init__(self, in_channel, out_channel) -> None:
+    def __init__(self, in_channel, mid_channel, out_channel) -> None:
         super().__init__()
-        self.output_conv = nn.Sequential(
+        self.output_conv = self.final_block(in_channel, mid_channel, out_channel)
+
+    def final_block(self, in_channels, mid_channel, out_channels, kernel_size=3):
+        block = torch.nn.Sequential(
             torch.nn.Conv2d(
-                in_channels=in_channel, out_channels=out_channel, kernel_size=1
+                kernel_size=kernel_size,
+                in_channels=in_channels,
+                out_channels=mid_channel,
+                padding=1
             ),
             torch.nn.ReLU(),
-            torch.nn.BatchNorm2d(out_channel),
-            torch.nn.LogSoftmax(dim=1)
+            torch.nn.BatchNorm2d(mid_channel),
+            torch.nn.Conv2d(
+                kernel_size=kernel_size,
+                in_channels=mid_channel,
+                out_channels=mid_channel,
+                padding=1
+            ),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm2d(mid_channel),
+            torch.nn.Conv2d(
+                kernel_size=kernel_size,
+                in_channels=mid_channel,
+                out_channels=out_channels,
+                padding=1,
+            ),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm2d(out_channels),
+            nn.LogSoftmax(dim=1)
         )
+        return block
 
     def forward(self, x):
         x = self.output_conv(x)

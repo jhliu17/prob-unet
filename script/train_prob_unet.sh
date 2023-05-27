@@ -6,8 +6,8 @@ python run.py --mode train \
               --train_dataset_path /srv/disk00/junhal11/oct_understanding/data/2015_boe_chiu/2015_BOE_Chiu/train_set_wo_xobject.npz \
               --test_dataset_path /srv/disk00/junhal11/oct_understanding/data/2015_boe_chiu/2015_BOE_Chiu/test_set_wo_xobject.npz  \
               --batch_size 8 \
-              --lr 1e-4 \
-              --epoch 1000 \
+              --lr 1e-2 \
+              --epoch 300 \
               --number_worker 2 \
               --log_freq 10 \
               --eval_freq 50 \

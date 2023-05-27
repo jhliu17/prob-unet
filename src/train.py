@@ -44,10 +44,10 @@ def train_prob_unet(args):
     train_dataset, valid_dataset = split_dataset(train_dataset, 0.7, args.seed)
 
     # init model and trainer
-    unet = UNet(1, 2)
+    unet = UNet(1, 8)
     prior_net = ProbabilisticModule(1, 8)
     posterior_net = ProbabilisticModule(2, 8)
-    output_net = OutputModule(2 + 8 // 2, 2)
+    output_net = OutputModule(8 + 8 // 2, 32, 2)
     model = ProbabilisticUNetWrapper(
         unet=unet,
         prior_net=prior_net,
