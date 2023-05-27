@@ -45,9 +45,9 @@ def train_prob_unet(args):
 
     # init model and trainer
     unet = UNet(1, 8)
-    prior_net = ProbabilisticModule(1, 8)
-    posterior_net = ProbabilisticModule(2, 8)
-    output_net = OutputModule(8 + 8 // 2, 32, 2)
+    prior_net = ProbabilisticModule(1, args.latent_size)
+    posterior_net = ProbabilisticModule(2, args.latent_size)
+    output_net = OutputModule(8 + args.latent_size // 2, 32, 2)
     model = ProbabilisticUNetWrapper(
         unet=unet,
         prior_net=prior_net,

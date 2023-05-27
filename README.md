@@ -7,10 +7,18 @@ Processed from `boe_chiu` dataset includes train: 86 test: 28. Download link:
 
 ## Training
 
+### UNet Baseline
+
 Use index to indicate which gpu card you are going to use
 
 ```bash
 sh script/train_unet.sh [gpu_id]
+```
+
+### Probabilistic UNet
+
+```bash
+sh script/train_prob_unet.sh [gpu_id]
 ```
 
 ## References

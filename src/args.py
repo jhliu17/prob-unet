@@ -32,6 +32,7 @@ def get_common_parser():
                         help='batch size during training stage')
     parser.add_argument('--eval_batch_size', type=int, default=64,
                         help='batch size during evaluation stage')
+    parser.add_argument('--latent_size', type=int, default=8, help='latent variable size')
     parser.add_argument('--lr', type=float, default=1e-3,
                         help='learning rate')
     parser.add_argument('--lambda1', type=float, default=1,
