@@ -1,20 +1,11 @@
 import torch
 
-from torch.utils.data import random_split
 
 from src.model.segmentation.unet import UNet
 from src.model.segmentation.prob_unet import ProbabilisticUNetWrapper, ProbabilisticModule, OutputModule
 from src.dataset import BoeChiuFluidSegDataset
 from src.trainer import TrainerForUNet, TrainerForProbUNet
-
-
-def split_dataset(dataset, train_ratio, seed):
-    train_size = int(len(dataset) * train_ratio)
-    valid_size = len(dataset) - train_size
-    train_dataset, valid_dataset = random_split(
-        dataset, [train_size, valid_size], generator=torch.Generator().manual_seed(seed)
-    )
-    return train_dataset, valid_dataset
+from src.utils import split_dataset
 
 
 def train_unet(args):

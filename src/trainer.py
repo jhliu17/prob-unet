@@ -272,6 +272,38 @@ class TrainerForProbUNet(TrainerForUNet):
         return score, output
 
     @torch.inference_mode()
+    def sample(self, dataset, N: int = 1, num_workers: int = 0):
+        self.model.eval()
+        dataloader = DataLoader(
+            dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+
+        feat_list = []
+        y_pred_list = []
+        y_true_list = []
+        for i, (feat, label) in enumerate(tqdm(dataloader)):
+            feat: torch.Tensor = feat.to(self.device)
+            label: torch.Tensor = label.to(self.device)
+
+            mean_outputs = self.model(feat, label)
+            y_pred_list.append({'mean_pred': mean_outputs['pred'].cpu(), 'sampling_pred': []})
+            feat_list.append(feat.cpu())
+            y_true_list.append(label.cpu())
+
+            sampling_outputs = self.model.sampling_reconstruct(feat, N)
+            y_pred_list[-1]['sampling_pred'].extend([i.cpu() for i in sampling_outputs])
+
+        outputs = {
+            'x': feat_list,
+            'y_pred': y_pred_list,
+            'y_true': y_true_list
+        }
+        return outputs
+
+    @torch.inference_mode()
     def eval_on_prediction(self, y_pred: torch.Tensor, y_true: torch.Tensor):
         # iou metric
         iou_fn = BinaryJaccardIndex()

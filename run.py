@@ -3,6 +3,7 @@ import time
 import torch
 
 from src.train import train_unet, train_prob_unet
+from src.infer import sample_from_prob_unet
 from src.args import get_common_parser
 
 if __name__ == '__main__':
@@ -25,5 +26,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.ckpt_dir):
         os.makedirs(args.ckpt_dir)
 
-    # train_unet(args=args)
-    train_prob_unet(args=args)
+    if args.mode == 'train':
+        train_prob_unet(args=args)
+    elif args.mode == 'sample':
+        sample_from_prob_unet(args=args)

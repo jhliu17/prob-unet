@@ -189,10 +189,7 @@ class ProbabilisticUNetWrapper(nn.Module):
         while len(result) < N:
             result.append(self.inject_latent_unet_forward(x, prior_dist.sample()))
 
-        if N == 1:
-            return result[0]
-        else:
-            return result
+        return result
 
     @torch.inference_mode()
     def reconstruct(self, x, posterior_dist, use_posterior_mean=True):

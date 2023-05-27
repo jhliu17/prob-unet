@@ -6,7 +6,7 @@ def get_common_parser():
 
     # code related
     parser.add_argument('--mode', type=str,
-                        choices=['train', 'eval'], default='train',
+                        choices=['train', 'eval', 'sample'], default='train',
                         help='code running mode')
     parser.add_argument('--seed', type=int, default=2023,
                         help='code running seed')

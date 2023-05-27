@@ -3,6 +3,7 @@ import numpy as np
 import torch
 
 from matplotlib import pyplot as plt
+from torch.utils.data import random_split
 
 
 def check_attributes(object_, attributes):
@@ -117,3 +118,12 @@ def plot_segmentation_examples(datax, datay_pred, datay, num_examples=3):
         ax[row_num][3].set_title("Target image")
 
     return fig, ax
+
+
+def split_dataset(dataset, train_ratio, seed):
+    train_size = int(len(dataset) * train_ratio)
+    valid_size = len(dataset) - train_size
+    train_dataset, valid_dataset = random_split(
+        dataset, [train_size, valid_size], generator=torch.Generator().manual_seed(seed)
+    )
+    return train_dataset, valid_dataset
