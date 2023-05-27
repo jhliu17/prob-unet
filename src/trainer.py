@@ -201,3 +201,85 @@ class TrainerForUNet(Trainer):
         score["pred_area"] = num1
         score["label_area"] = num2
         return score
+
+
+class TrainerForProbUNet(TrainerForUNet):
+    def train_step(self, input_feats):
+        self.model.train()
+        feat, label = input_feats["feat"], input_feats["label"]
+
+        # clean gradient and forward
+        self.optimizer.zero_grad()
+
+        outputs = self.model(feat)
+        output = outputs['pred']
+
+        # output shape =(batch_size, n_classes, img_cols, img_rows)
+        output = output.permute(0, 2, 3, 1).contiguous()  # [b, ]
+        # output shape =(batch_size, img_cols, img_rows, n_classes)
+
+        output = output.view(-1, 2)
+        label = label.view(-1)
+        seg_loss_fn = CrossEntropyLoss()
+        seg_loss = seg_loss_fn(output, label)
+        kl_loss = torch.distributions.kl_divergence(outputs['posterior_dist'], outputs['prior_dist']).mean()
+        loss = seg_loss + kl_loss
+
+        # backward and update parameters
+        loss.backward()
+        self.optimizer.step()
+
+        # prepare log dict
+        log = {"loss": loss.item()}
+        return log
+
+    @torch.inference_mode()
+    def eval(self, dataset, num_workers: int = 0):
+        self.model.eval()
+        dataloader = DataLoader(
+            dataset,
+            batch_size=self.args.eval_batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+
+        feat_list = []
+        y_pred_list = []
+        y_true_list = []
+        elbo = 0
+        for feat, label in tqdm(dataloader):
+            feat: torch.Tensor = feat.to(self.device)
+            outputs = self.model(feat)
+            elbo += self.model.elbo(feat, label)
+
+            pred = outputs['pred']
+            feat_list.append(feat.cpu())
+            y_pred_list.append(pred.cpu())
+            y_true_list.append(label)
+
+        x = torch.cat(feat_list, dim=0)
+        y_pred = torch.cat(y_pred_list, dim=0)
+        y_true = torch.cat(y_true_list, dim=0)
+        score = self.eval_on_prediction(y_pred, y_true)
+        score.update({'elbo': elbo.item()})
+
+        output = {}
+        output["x"] = x
+        output["y_pred"] = y_pred
+        output["y_true"] = y_true
+        return score, output
+
+    @torch.inference_mode()
+    def eval_on_prediction(self, y_pred: torch.Tensor, y_true: torch.Tensor):
+        # iou metric
+        iou_fn = BinaryJaccardIndex()
+        segment = y_pred.argmax(dim=1, keepdim=True)
+        iou_score = iou_fn(segment, y_true)
+        num1 = segment.sum().item()
+        num2 = y_true.sum().item()
+
+        score = {}
+        score["iou_score"] = iou_score
+        score["pred_area"] = num1
+        score["label_area"] = num2
+        return score

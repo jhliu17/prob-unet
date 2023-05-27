@@ -2,6 +2,51 @@ import torch
 import torch.nn as nn
 
 
+class ProbabilisticModule(nn.Module):
+    def contracting_block(self, in_channels, out_channels, kernel_size=3):
+        block = torch.nn.Sequential(
+                    torch.nn.Conv2d(kernel_size=kernel_size, in_channels=in_channels, out_channels=out_channels),
+                    torch.nn.ReLU(),
+                    torch.nn.BatchNorm2d(out_channels),
+                    torch.nn.Conv2d(kernel_size=kernel_size, in_channels=out_channels, out_channels=out_channels),
+                    torch.nn.ReLU(),
+                    torch.nn.BatchNorm2d(out_channels),
+                )
+        return block
+
+    def __init__(self, in_channel, out_dim):
+        super().__init__()
+        self.conv_encode1 = self.contracting_block(in_channels=in_channel, out_channels=16)
+        self.conv_maxpool1 = torch.nn.MaxPool2d(kernel_size=3)
+        self.conv_encode2 = self.contracting_block(16, 32)
+        self.conv_maxpool2 = torch.nn.MaxPool2d(kernel_size=3)
+        self.conv_encode3 = self.contracting_block(32, 64)
+        self.conv_maxpool3 = torch.nn.MaxPool2d(kernel_size=4)
+        self.linear = nn.Linear(8, out_dim)
+
+    def forward(self, x):
+        encode_block1 = self.conv_encode1(x)
+        encode_pool1 = self.conv_maxpool1(encode_block1)
+        encode_block2 = self.conv_encode2(encode_pool1)
+        encode_pool2 = self.conv_maxpool2(encode_block2)
+        encode_block3 = self.conv_encode3(encode_pool2)
+        encode_pool3 = self.conv_maxpool3(encode_block3)
+        prob = self.linear(encode_pool3.flatten())
+        return prob
+
+
+class OutputModule(nn.Module):
+    def __init__(self, in_channel, out_channel) -> None:
+        super().__init__()
+        self.output_conv = nn.Sequential(
+            torch.nn.Conv2d(in_channels=in_channel, out_channels=out_channel, kernel_size=1)
+        )
+
+    def forward(self, x):
+        x = self.output_conv(x)
+        return x
+
+
 class ProbabilisticUNetWrapper(nn.Module):
     def __init__(
         self,
