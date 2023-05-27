@@ -2,7 +2,7 @@ import os
 import time
 import torch
 
-from src.train import train_unet
+from src.train import train_unet, train_prob_unet
 from src.args import get_common_parser
 
 if __name__ == '__main__':
@@ -25,4 +25,5 @@ if __name__ == '__main__':
     if not os.path.exists(args.ckpt_dir):
         os.makedirs(args.ckpt_dir)
 
-    train_unet(args=args)
+    # train_unet(args=args)
+    train_prob_unet(args=args)

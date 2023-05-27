@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torchvision.transforms import functional as fv
 
 
 class ProbabilisticModule(nn.Module):
@@ -25,24 +26,24 @@ class ProbabilisticModule(nn.Module):
     def __init__(self, in_channel, out_dim):
         super().__init__()
         self.conv_encode1 = self.contracting_block(
-            in_channels=in_channel, out_channels=16
+            in_channels=in_channel, out_channels=2
         )
         self.conv_maxpool1 = torch.nn.MaxPool2d(kernel_size=3)
-        self.conv_encode2 = self.contracting_block(16, 32)
-        self.conv_maxpool2 = torch.nn.MaxPool2d(kernel_size=3)
-        self.conv_encode3 = self.contracting_block(32, 64)
-        self.conv_maxpool3 = torch.nn.MaxPool2d(kernel_size=4)
-        self.linear = nn.Linear(8, out_dim)
+        self.conv_encode2 = self.contracting_block(2, 4)
+        self.conv_maxpool2 = torch.nn.MaxPool2d(kernel_size=5)
+        self.linear = nn.Linear(4 * 17 * 17, out_dim)
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         encode_block1 = self.conv_encode1(x)
         encode_pool1 = self.conv_maxpool1(encode_block1)
         encode_block2 = self.conv_encode2(encode_pool1)
         encode_pool2 = self.conv_maxpool2(encode_block2)
-        encode_block3 = self.conv_encode3(encode_pool2)
-        encode_pool3 = self.conv_maxpool3(encode_block3)
-        prob = self.linear(encode_pool3.flatten())
-        return prob
+        prob = self.linear(encode_pool2.flatten(start_dim=1))
+
+        mean, var = torch.split(prob, prob.shape[1] // 2, dim=1)
+        var = self.relu(var) / 2 + 1e-1
+        return mean, var
 
 
 class OutputModule(nn.Module):
@@ -51,7 +52,10 @@ class OutputModule(nn.Module):
         self.output_conv = nn.Sequential(
             torch.nn.Conv2d(
                 in_channels=in_channel, out_channels=out_channel, kernel_size=1
-            )
+            ),
+            torch.nn.ReLU(),
+            torch.nn.BatchNorm2d(out_channel),
+            torch.nn.LogSoftmax(dim=1)
         )
 
     def forward(self, x):
@@ -81,25 +85,26 @@ class ProbabilisticUNetWrapper(nn.Module):
             mean, logvar = rep
         elif torch.is_tensor(rep):
             mean, logvar = torch.split(rep, rep.shape[1] // 2, dim=1)
-        prior_dist: torch.distributions.Distribution = self.latent_distribution(
-            mean, logvar.mul(0.5).exp()
+        prior_dist: torch.distributions.Distribution = self.latent_distribution_cls(
+            mean, logvar
         )
         return prior_dist
 
     def encode_posterior(self, x, y) -> torch.distributions.Distribution:
-        rep = self.posterior_net(torch.cat((x, y.float()), 1))
+        resize_y = fv.resize(y, size=x.shape[-2:])
+        rep = self.posterior_net(torch.cat((x, resize_y), 1))
         if isinstance(rep, tuple):
             mean, logvar = rep
         elif torch.is_tensor(rep):
             mean, logvar = torch.split(rep, rep.shape[1] // 2, dim=1)
-        posterior_dist: torch.distributions.Distribution = self.latent_distribution(
-            mean, logvar.mul(0.5).exp()
+        posterior_dist: torch.distributions.Distribution = self.latent_distribution_cls(
+            mean, logvar
         )
         return posterior_dist
 
     def inject_latent_unet_forward(self, x, sample):
         repr: torch.Tensor = self.unet(x)
-        expand_sample = sample[:, :, None, None].expand_as(repr)
+        expand_sample = torch.broadcast_to(sample[:, :, None, None], sample.shape + repr.shape[-2:])
         latent_repr = torch.cat([repr, expand_sample], dim=1)
         pred: torch.Tensor = self.output_net(latent_repr)
         return pred
@@ -196,8 +201,10 @@ class ProbabilisticUNetWrapper(nn.Module):
         posterior_dist = self.encode_posterior(x, y)
 
         kl = self.kl_divergence(prior_dist, posterior_dist)
+
+        recon = self.reconstruct(x, posterior_dist, use_posterior_mean=True)
         nll = nn.NLLLoss(reduction=nll_reduction)(
-            self.reconstruct(sample=None, use_posterior_mean=True),
-            y.long(),
+            recon.permute(0, 2, 3, 1).contiguous().view(-1, 2),
+            y.long().view(-1),
         )
         return -(beta * nll + kl)

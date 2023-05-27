@@ -7,9 +7,9 @@ python run.py --mode train \
               --test_dataset_path /srv/disk00/junhal11/oct_understanding/data/2015_boe_chiu/2015_BOE_Chiu/test_set_wo_xobject.npz  \
               --batch_size 8 \
               --lr 1e-4 \
-              --epoch 200 \
+              --epoch 1000 \
               --number_worker 2 \
               --log_freq 10 \
-              --eval_freq 20 \
+              --eval_freq 50 \
               --save_ratio 0 \
-              --ckpt_dir output/segmentation/unet
+              --ckpt_dir output/segmentation/prob_unet

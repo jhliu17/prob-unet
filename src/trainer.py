@@ -2,7 +2,7 @@ import logging
 import os
 import torch
 
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.optim import SGD
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
@@ -211,7 +211,7 @@ class TrainerForProbUNet(TrainerForUNet):
         # clean gradient and forward
         self.optimizer.zero_grad()
 
-        outputs = self.model(feat)
+        outputs = self.model(feat, label)
         output = outputs['pred']
 
         # output shape =(batch_size, n_classes, img_cols, img_rows)
@@ -220,17 +220,17 @@ class TrainerForProbUNet(TrainerForUNet):
 
         output = output.view(-1, 2)
         label = label.view(-1)
-        seg_loss_fn = CrossEntropyLoss()
+        seg_loss_fn = NLLLoss()
         seg_loss = seg_loss_fn(output, label)
         kl_loss = torch.distributions.kl_divergence(outputs['posterior_dist'], outputs['prior_dist']).mean()
-        loss = seg_loss + kl_loss
+        loss = seg_loss + (kl_loss * 1e-2 if kl_loss < 1e2 else kl_loss * 1e-3)
 
         # backward and update parameters
         loss.backward()
         self.optimizer.step()
 
         # prepare log dict
-        log = {"loss": loss.item()}
+        log = {"loss": loss.item(), 'seg_loss': seg_loss.item(), 'kl_loss': kl_loss.item()}
         return log
 
     @torch.inference_mode()
@@ -249,13 +249,15 @@ class TrainerForProbUNet(TrainerForUNet):
         elbo = 0
         for feat, label in tqdm(dataloader):
             feat: torch.Tensor = feat.to(self.device)
-            outputs = self.model(feat)
+            label: torch.Tensor = label.to(self.device)
+
+            outputs = self.model(feat, label)
             elbo += self.model.elbo(feat, label)
 
             pred = outputs['pred']
             feat_list.append(feat.cpu())
             y_pred_list.append(pred.cpu())
-            y_true_list.append(label)
+            y_true_list.append(label.cpu())
 
         x = torch.cat(feat_list, dim=0)
         y_pred = torch.cat(y_pred_list, dim=0)
