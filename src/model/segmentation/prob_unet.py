@@ -42,7 +42,7 @@ class ProbabilisticModule(nn.Module):
         prob = self.linear(encode_pool2.flatten(start_dim=1))
 
         mean, var = torch.split(prob, prob.shape[1] // 2, dim=1)
-        var = self.relu(var) / 2 + 1
+        var = self.relu(var) + 3
         return mean, var
 
 
