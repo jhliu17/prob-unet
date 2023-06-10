@@ -1,7 +1,7 @@
 # Probabilistic U-Net
 
 Implementaion of deep neural network combining probabilistic graphical model and u-net for modeling uncertainty problem in the field
-of medical image understanding. This is for CS 274B Probabilistic Graphical Model course project at UC Irvine.
+of medical image understanding. This is for the CS 274B Probabilistic Graphical Model course project at UC Irvine.
 
 ![](assets/graphical.jpg)
 
