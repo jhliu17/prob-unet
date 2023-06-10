@@ -26,7 +26,7 @@ sh script/train_unet.sh [gpu_id]
 sh script/train_prob_unet.sh [gpu_id]
 ```
 
-# Sampling Results
+## Sampling Results
 Below are segmentation results sampled from latent distribution
 ![](assets/sampling.png)
 
