@@ -7,11 +7,11 @@ python run.py --mode sample \
               --test_dataset_path /srv/disk00/junhal11/oct_understanding/data/2015_boe_chiu/2015_BOE_Chiu/test_set_wo_xobject.npz  \
               --batch_size 8 \
               --lr 1e-2 \
-              --latent_size 16 \
+              --latent_size 8 \
               --epoch 300 \
               --number_worker 2 \
               --log_freq 10 \
               --eval_freq 50 \
               --save_ratio 0 \
               --ckpt_dir output/segmentation/prob_unet \
-              --load_ckpt_path output/segmentation/prob_unet/train-2023-05-27-16-17-45/model_99.pth
+              --load_ckpt_path output/segmentation/prob_unet/train-2023-05-27-15-48-11/model_299.pth
